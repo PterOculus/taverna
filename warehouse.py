@@ -1,156 +1,84 @@
 import random
-import json
+import uuid
 
+class Product:
+    def __init__(self, id, name, count, price):
+        self.id = id
+        self.name = name
+        self.count = count
+        self.price = price
 
-class Warehouse:
+class Repository:
+    def __init__(self, path):
+        pass
 
-    '''общий класс с работой с продукатми на складе'''
+    def read(self):
+        # check file existance and create if needed
+        # todo read file and parse it
+        return []
+    
+    def save(self, products):
+        # todo save to file in csv
+        pass
 
-    TOTAL = 0
+class Service:
+    products = []
 
-    def __init__(self, ware_house, basket):
-        self.ware_house = ware_house
-        self.basket = basket
+    def __init__(self, repo):
+        self.repository = repo
+        self.products = self.repository.read()
 
-    def load(self):
-        file = self.ware_house + '.json'
-        with open(file, 'r') as read:
-            array = json.load(read)
-        return array
+    def get_all(self):
+        return self.products
 
-    def add_product(self, product, count, price):
+    def get_by_id(self, id):
+        # find product by id
+        for p in self.products:
+            if p.id == id:
+                return p
+        return None
+    
+    def add(self, name, count, price):
+        # todo check strings length
+        self.products.append(Product(self._generateId(), name, count, price))
+        self.repository.save(products)
 
-        '''добавляет продукт на склад'''
+    def update(self, product: Product):
+        p = self.get_by_id(product.id)
+        if (p == None):
+            raise Exception("Product not found")
+        # todo update staff
+        self.repository.save(self.products)
 
-        file = self.ware_house + '.json'
-        new_product = {product: {'количество': count, 'цена': price}}
-        array = self.load()
-        array.update(new_product)
-        with open(file, 'w') as add:
-            json.dump(array, add)
+    def delete(self, id):
+        # todo like update but delete from array
+        pass
 
-    def warehouse_info(self):
+    def _generateId(self):
+        return uuid.uuid4()
 
-        '''показывает обстановку на складе'''
+if __name__ == '__main__':
+    service = Service(Repository('./path'))
 
-        array = self.load()
-        print([a for a in array.items()])
+    print("l - show all items")
+    print("d - delete item")
+    print("q - quit")
 
-    def delete_product(self, product):
-
-        '''удаление товара со склада'''
-
-        file = self.ware_house + '.json'
-        array = self.load()
-        if product in array:
-            del array[product]
-            with open(file, 'w') as delete:
-                json.dump(array, delete)
-        else:
-            raise ValueError('такого продукта нет на складе')
-
-    def counter(self, product, count):
-
-        '''меняет количество товаров на складе'''
-        if product not in self.load():
-            raise ValueError('такого продукта нет')
-        array = self.load()
-        new_count = array[product]['количество']
-        file = self.ware_house + '.json'
-
-        if count == 0:
-            raise ValueError('число должно быть больше нуля')
-
-        elif new_count + count < 0:
-            array[product]['количество'] = 0
-
-        else:
-            new_count = array[product]['количество']
-            array[product]['количество'] = new_count+count
-
-        with open(file, 'w') as ct:
-            json.dump(array, ct)
-
-    def pricer(self, product, price):
-
-        '''меняет цену товаров на складе'''
-        if product not in self.load():
-            raise ValueError('такого продукта нет')
-        array = self.load()
-        new_price = array[product]['цена']
-        file = self.ware_house + '.json'
-
-        if price == 0 or new_price + price < 0:
-            array[product]['цена'] = 'бесплатно'
-
-        else:
-            new_price = array[product]['цена']
-            array[product]['цена'] = new_price + price
-
-        with open(file, 'w') as pt:
-            json.dump(array, pt)
-
-    @staticmethod
-    def add_id():
-
-        '''создает номер заказа и файл'''
-
-        a = 1
-        b = 100
-        num = random.randint(a, b)
-        ii = 'order ' + str(num) + '.txt'
-        with open(ii, 'w'):
-            print(f'ORDER ID: {num}')
-
-    @classmethod
-    def total_price(cls, file, product, count):
-
-        '''считает общую цену'''
-
-        with open(file, 'r') as read:
-            array = json.load(read)
-
-        price = array[product]['цена'] * count
-        cls.TOTAL += price
-        return cls.TOTAL
-
-    @classmethod
-    def total(cls, order_id):
-        o_id = 'order ' + str(order_id) + '.txt'
-
-        with open(o_id, 'r') as read:
-            add_total = read.read()
-
-        add_total += f'TOTAL: {str(cls.TOTAL)}'
-
-        with open(o_id, 'w') as write:
-            write.write(add_total)
-
-    def order_product(self, order_id, product, count):
-
-        '''составляет заказ и кладет продукты в корзину (убирая купленное со склада)'''
-
-        array = self.load()
-        new_count =- count
-        self.counter(product, new_count)
-        file_name = self.ware_house + '.json'
-
-        if count <= 0:
-            raise ValueError('количество продуктов должно быть больше нуля')
-        elif product not in array:
-            raise ValueError('такого продукта нет на складе')
-        elif array[product]['количество'] == 0 or array[product]['количество'] - new_count < 0:
-            raise ValueError('товар кончился, или попробуйте взять меньше товара. Товара осталось: ', array[product]['количество'])
-
-        o_id = 'order ' + str(order_id) + '.txt'
-        price = array[product]['цена'] * count
-        basket = (f'Product: {product} \nCount: {count} \nPrice: {price}\n \n')
-
-        with open(o_id, 'r') as read:
-            all = read.read()
-
-        all += basket
-
-        with open(o_id, 'w') as write:
-            write.write(all)
-            self.total_price(file_name, product, count)
+    while True:
+        cmd = input("Command: ")
+        try:
+            if (cmd == "1"):
+                print([i.name for i in self.service.get_all()])
+            elif (cmd == "2"):
+                name = input("name: ")
+                count = input("count: ")
+                price = input("price: ")
+                self.service.add(name, count, price)
+            elif (cmd == "q"):
+                break
+            else:
+                print("retard")
+        except Exception as e:
+            print(f"Failed to perform command: {e}")
+    
+    print("bye bye")
