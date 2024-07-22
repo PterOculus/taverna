@@ -80,5 +80,4 @@ if __name__ == '__main__':
                 print("retard")
         except Exception as e:
             print(f"Failed to perform command: {e}")
-    
     print("bye bye")
